@@ -1,0 +1,2 @@
+# nonebot_plugin_youthstudy
+基于nonebot的青年大学习插件，用来获取最新一期的青年大学习答案
