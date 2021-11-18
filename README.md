@@ -23,3 +23,8 @@ nonebot.load_plugin("nonebot_plugin_youthstudy")
 
 对机器人发送口令：“青年大学习”或者“大学习”即可获取最新一期的青年大学习答案
 
+
+
+### TODO
+
+- [ ] 通过检查更新自动提醒完成青年大学习
