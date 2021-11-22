@@ -47,45 +47,56 @@ async def parse_html(uri):
                         if div == "\n":
                             continue
                         answer = []
-                        for i in div.find_all("div"):
-                            check = i.get("data-a")
-                            if check is not None:
-                                answer.append(check)
+                        if div.name == "div":
+                            for i in div.find_all("div"):
+                                check = i.get("data-a")
+                                if check is not None:
+                                    answer.append(check)
 
-                        if len(answer) > 4:
-                            answer = answer[:int(len(answer) / 2)]
-                        tmp.append(answer)
+                            if len(answer) > 4:
+                                answer = answer[:int(len(answer) / 2)]
+                            tmp.append(answer)
                     field = "required"
-                    out = True
+                    req_end = 0
+                    flag = {"location": 0, "result": True}
                     for i, v in enumerate(tmp):
-                        if out and len(v) == 0 and i > 0 and len(tmp[i - 1]) != 0:
+                        if len(v) == 0:
+                            req_end = i + 1
+                        elif flag["result"]:
+                            flag["result"] = False
+                            flag["location"] = i
+                    for i, v in enumerate(tmp):
+                        if flag["location"] < req_end and i < req_end:
+                            answer_attrs[field].append(v)
+                        elif flag["location"] == req_end and i >= req_end:
                             field = "optional"
-                            out = False
-                            continue
-                        if len(v) != 0:
                             answer_attrs[field].append(v)
 
                     # process
-                    output = ""
+                    output = []
                     if len(answer_attrs["required"]) > 0:
-                        output += "本期答案\n"
+                        output.append("本期答案\n")
                         for i, v in enumerate(answer_attrs["required"]):
                             checks = ""
                             for j, v2 in enumerate(v):
                                 if v2 == "1":
                                     checks += option[j]
-                            output += template.format(num=i + 1, check=checks)
-                            output += "\n"
+                            output.append(template.format(num=i + 1, check=checks) + "\n")
                     if len(answer_attrs["optional"]) != 0:
-                        output += "课外习题\n"
+                        output.append("课外习题\n")
                         for i, v in enumerate(answer_attrs["optional"]):
                             checks = ""
                             for j, v2 in enumerate(v):
                                 if v2 == "1":
                                     checks += option[j]
-                            output += template.format(num=i + 1, check=checks)
-                            output += "\n"
-                    return output
+                            output.append(template.format(num=i + 1, check=checks) + "\n")
+                    result = [output[0]]
+                    for i, v in enumerate(output):
+                        if i % 13 != 0 and i != 0:
+                            result[int(i/13)] += v
+                        elif i % 13 == 0 and i != 0:
+                            result.append(v)
+                    return result
             else:
                 raise f"请求失败{res.status_code}"
         except Exception as e:

@@ -24,8 +24,11 @@ async def convert_pic(text):
         period += i + f"\n"
     draw.multiline_text((10, 10), title, fill='gold', font=size(55))
     draw.multiline_text((100, 80), period, fill='gold', font=size(50))
-    draw.multiline_text((250, 40), text["answer"], fill='gold', font=size(40))
-    draw.multiline_text((250, 700), text["end_time"], fill='gold', font=size(40))
+    j = 0
+    for i in text["answer"]:
+        draw.multiline_text((200 + j * 150, 40 if j == 0 else 90), i, fill='gold', font=size(40))
+        j += 1
+    draw.multiline_text((200, 700), text["end_time"], fill='gold', font=size(40))
     buf = BytesIO()
     img.save(buf, format="PNG")
     base64_str = base64.b64encode(buf.getbuffer()).decode()
