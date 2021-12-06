@@ -56,7 +56,7 @@ async def parse_html(uri):
                             if len(answer) > 4:
                                 answer = answer[:int(len(answer) / 2)]
                             tmp.append(answer)
-                    field = "required"
+                    print(tmp)
                     req_end = 0
                     flag = {"location": 0, "result": True}
                     for i, v in enumerate(tmp):
@@ -66,12 +66,17 @@ async def parse_html(uri):
                             flag["result"] = False
                             flag["location"] = i
                     for i, v in enumerate(tmp):
-                        if flag["location"] < req_end and i < req_end:
+                        if flag["location"] < req_end and req_end - 1 > i >= flag["location"]:
+                            field = "required"
                             answer_attrs[field].append(v)
                         elif flag["location"] == req_end and i >= req_end:
                             field = "optional"
                             answer_attrs[field].append(v)
+                        elif flag["location"] < req_end <= i:
+                            field = "optional"
+                            answer_attrs[field].append(v)
 
+                    print(answer_attrs)
                     # process
                     output = []
                     if len(answer_attrs["required"]) > 0:
