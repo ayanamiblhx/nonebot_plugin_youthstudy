@@ -115,8 +115,7 @@ async def get_answer():
     days = (now - start_time).days
     if days < 7:
         end_time = time.strptime(update["result"]["endTime"], "%Y-%m-%d %H:%M:%S")
-        end_time = '结束日期: ' + time.strftime("%m{m}%d{d}%H{H}%M{M}"
-                                            .format(m='月', d='日', H='时', M='分'), end_time)
+        end_time = '结束日期: ' + time.strftime("%m{m}%d{d}%H{H}%M{M}", end_time).format(m='月', d='日', H='时', M='分')
         title = "青年大学习" + update["result"]["type"]
         period = update["result"]["title"]
         answer = await parse_html(update["result"]["uri"])
