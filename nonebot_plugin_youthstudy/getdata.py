@@ -28,7 +28,7 @@ async def parse_html(uri):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.53"
     }
     start_div = '<div class="section0 topindex">'
-    end_div = '<!-- <script type="text/javascript" src="js/index.js"></script> -->'
+    end_div = '<!-- <script type="text/javascript" src="js/index.js"></script>'
     tmp = []
     answer_attrs = {"required": [], "optional": []}
     option = "ABCDEF"
