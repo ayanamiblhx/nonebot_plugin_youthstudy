@@ -96,7 +96,7 @@ async def parse_html(uri):
                     result = [output[0]]
                     for i, v in enumerate(output):
                         if i % 13 != 0 and i != 0:
-                            result[int(i/13)] += v
+                            result[int(i / 13)] += v
                         elif i % 13 == 0 and i != 0:
                             result.append(v)
                     return result
@@ -115,7 +115,8 @@ async def get_answer():
     days = (now - start_time).days
     if days < 7:
         end_time = time.strptime(update["result"]["endTime"], "%Y-%m-%d %H:%M:%S")
-        end_time = '结束日期: ' + time.strftime("%m月%d日%H时%M分", end_time)
+        end_time = '结束日期: ' + time.strftime("%m{m}%d{d}%H{H}%M{M}"
+                                            .format(m='月', d='日', H='时', M='分'), end_time)
         title = "青年大学习" + update["result"]["type"]
         period = update["result"]["title"]
         answer = await parse_html(update["result"]["uri"])
