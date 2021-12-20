@@ -6,7 +6,7 @@ from nonebot.adapters.cqhttp.message import MessageSegment
 from nonebot.log import logger
 from datetime import datetime
 
-__plugin_name__ = "青年大学习"
+
 college_study = on_command('青年大学习', aliases={'大学习'}, priority=5)
 
 
