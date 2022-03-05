@@ -1,17 +1,15 @@
-from nonebot import on_command
+from nonebot.plugin import on_command
 from nonebot.typing import T_State
-from nonebot.adapters.cqhttp import Bot, MessageEvent
+from nonebot.adapters.onebot.v11 import Bot, MessageSegment, Event
 from .getdata import get_answer
-from nonebot.adapters.cqhttp.message import MessageSegment
 from nonebot.log import logger
 from datetime import datetime
-
 
 college_study = on_command('青年大学习', aliases={'大学习'}, priority=5)
 
 
 @college_study.handle()
-async def _(bot: Bot, event: MessageEvent, state: T_State):
+async def _(bot: Bot, event: Event, state: T_State):
     try:
         img = await get_answer()
         if img is None:

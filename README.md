@@ -28,3 +28,12 @@ nonebot.load_plugin("nonebot_plugin_youthstudy")
 ### TODO
 
 - [ ] 通过检查更新自动提醒完成青年大学习
+
+
+
+# 更新日志
+
+### 2021/3/5
+
+- 支持nonebot[v2.0.0-beta2]，请更新至最新版nonebot使用
+
