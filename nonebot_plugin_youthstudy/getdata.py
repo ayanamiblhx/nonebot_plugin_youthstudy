@@ -56,7 +56,7 @@ async def parse_html(uri):
                             if len(answer) > 4:
                                 answer = answer[:int(len(answer) / 2)]
                             tmp.append(answer)
-                    print(tmp)
+                    logger.info(tmp)
                     req_end = 0
                     flag = {"location": 0, "result": True}
                     for i, v in enumerate(tmp):
