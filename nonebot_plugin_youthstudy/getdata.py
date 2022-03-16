@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 from bs4 import BeautifulSoup
 from .convert_pic import convert_pic
-
+from nonebot.log import logger
 
 async def get_update():
     head = {
@@ -76,7 +76,7 @@ async def parse_html(uri):
                             field = "optional"
                             answer_attrs[field].append(v)
 
-                    print(answer_attrs)
+                    logger.info(answer_attrs)
                     # process
                     output = []
                     if len(answer_attrs["required"]) > 0:
