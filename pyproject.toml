@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "nonebot_plugin_youthstudy"
-version = "1.0.8"
+version = "1.0.9"
 description = "基于nonebot2的青年大学习插件"
 authors = ["ayanamiblhx <1196818079@qq.com>"]
 license = "GNU General Public License v3.0"
 homepage = "https://github.com/ayanamiblhx/nonebot_plugin_youthstudy"
-documentation = "https://github.com/ayanamiblhx/nonebot_plugin_youthstudy/blob/main/README.md"
+readme="README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
