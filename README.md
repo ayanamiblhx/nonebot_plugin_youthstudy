@@ -26,23 +26,53 @@
 
 **注**：如果你使用`nb`安装插件，则不需要设置此项
 
+### 机器人配置
 
+- 自动检查更新功能需要定时任务插件支持，请安装定时任务插件
+
+  使用`nb plugin install nonebot_plugin_apscheduler`或者`pip install nonebot_plugin_apscheduler`来进行安装
+
+- 在nonebot的.env配置文件中输入以下配置内容
+
+  ```py
+  APSCHEDULER_AUTOSTART=true
+  APSCHEDULER_CONFIG={"apscheduler.timezone": "Asia/Shanghai"}
+  QQ_FRIENDS=[11111,123456] # 这里填指定推送答案的QQ号
+  QQ_GROUPS=[11111,22222] # 这里填指定推送答案的群号，默认推送时@全体成员
+  ```
+
+- 在bot.py文件中添加以下内容
+
+  ```py
+  nonebot.init(apscheduler_autostart=True)
+  nonebot.init(apscheduler_config={
+      "apscheduler.timezone": "Asia/Shanghai"
+  })
+  ```
+
+  
 
 ### 正式使用
 
-对机器人发送口令：“青年大学习”或者“大学习”即可获取最新一期的青年大学习答案
+- 对机器人发送口令：“青年大学习”或者“大学习”即可获取最新一期的青年大学习答案
 
-
+- 插件会在每周一10：00开始，每3分钟检查是否更新
 
 ### TODO
 
-- [ ] 通过检查更新自动提醒完成青年大学习
+- [ ] 自动获取青年大学习完成截图
+
+  
 
 
 
 ## 更新日志
 
-### 2021/3/5
+### 2022/4/17
+
+- 支持通过检查更新自动提醒完成青年大学习，请参照机器人配置进行配置
+
+### 2022/3/5
 
 - 支持nonebot[v2.0.0-beta2]，请更新至最新版nonebot使用
 
