@@ -19,7 +19,6 @@ else:
     nonebot.logger.critical("plugin_config:{}".format(plugin_config))
     raise Exception("leetcode config error, please check env file")
 
-college_study = on_command('青年大学习', aliases={'大学习'}, priority=5)
 
 from nonebot import require
 
@@ -102,7 +101,7 @@ async def remind():
                 f.write(str(e))
             time.sleep(30)
 
-
+college_study = on_command('青年大学习', aliases={'大学习'}, priority=5)
 @college_study.handle()
 async def _(bot: Bot, event: Event, state: T_State):
     try:
@@ -116,3 +115,17 @@ async def _(bot: Bot, event: Event, state: T_State):
     except Exception as e:
         await college_study.send(f"出错了，错误信息：{e}", at_sender=True)
         logger.error(f"{datetime.now()}: 错误信息：{e}")
+complete_Scr = on_command('大学习截图', aliases={'完成截图'},priority= 5)
+@complete_Scr.handle()
+async def Scr(bot:Bot,event:Event,state:T_State):
+    try:
+        content = await get_pic()
+        scr = content[3]
+        if scr is None:
+            await complete_Scr.send("本周暂未更新青年大学习", at_sender=True)
+        else:
+            await complete_Scr.send(MessageSegment.image(scr), at_sender=True)
+    except Exception as e:
+        await complete_Scr.send(f"出错了，错误信息：{e}", at_sender=True)
+        logger.error(f"{datetime.now()}: 错误信息：{e}")
+

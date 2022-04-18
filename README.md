@@ -1,3 +1,11 @@
+<!--
+ * @Author: your name
+ * @Date: 2022-04-17 15:40:26
+ * @LastEditTime: 2022-04-18 18:10:35
+ * @LastEditors: your name
+ * @Description: 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @FilePath: \nonebot_plugin_youthstudy\README.md
+-->
 <div align="center">
     <img src="https://s4.ax1x.com/2022/03/05/bw2k9A.png" alt="bw2k9A.png" border="0"/>
     <h1>nonebot_plugin_youthstudy</h1>
@@ -56,22 +64,14 @@
 
 - 对机器人发送口令：“青年大学习”或者“大学习”即可获取最新一期的青年大学习答案
 
+- 对机器人发送口令：“大学习截图”或者“完成截图”即可获取最新一期的青年大学习完成截图
+
 - 插件会在每周一10：00开始，每3分钟检查是否更新
 
 ### TODO
 
 - [ ] 对机器人发送口令开关定时推送功能
 - [ ] 对机器人发送指令设置推送相关好友/群聊
-
-### 使用截图
-
-![](./使用截图/使用截图1.png)
-
-![](./使用截图/使用截图2.png)
-
-- 自动检查更新并推送
-
-  ![](./使用截图/使用截图3.png)
 
 ## 更新日志
 
