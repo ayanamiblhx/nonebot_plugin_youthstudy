@@ -1,11 +1,3 @@
-<!--
- * @Author: your name
- * @Date: 2022-04-17 15:40:26
- * @LastEditTime: 2022-04-18 18:10:35
- * @LastEditors: your name
- * @Description: 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- * @FilePath: \nonebot_plugin_youthstudy\README.md
--->
 <div align="center">
     <img src="https://s4.ax1x.com/2022/03/05/bw2k9A.png" alt="bw2k9A.png" border="0"/>
     <h1>nonebot_plugin_youthstudy</h1>
@@ -45,10 +37,9 @@
   ```py
   APSCHEDULER_AUTOSTART=true
   APSCHEDULER_CONFIG={"apscheduler.timezone": "Asia/Shanghai"}
-  QQ_FRIENDS=[11111,123456] # 这里填指定推送答案的QQ号
-  QQ_GROUPS=[11111,22222] # 这里填指定推送答案的群号，默认推送时@全体成员
+  SUPERUSERS=["1111"]#设置超管账号
   ```
-
+  
 - 在bot.py文件中添加以下内容
 
   ```py
@@ -66,14 +57,20 @@
 
 - 对机器人发送口令：“大学习截图”或者“完成截图”即可获取最新一期的青年大学习完成截图
 
+- 更多功能请对机器人发送指令：“帮助”、“功能”、“菜单”和“help"获取
+
 - 插件会在每周一10：00开始，每3分钟检查是否更新
 
 ### TODO
 
-- [ ] 对机器人发送口令开关定时推送功能
-- [ ] 对机器人发送指令设置推送相关好友/群聊
+- [ ] 优化机器人
 
 ## 更新日志
+
+### 2022/4/24
+
+- 支持对机器人发送口令开关定时推送功能
+- 支持对机器人发指令设置推送相关好友/群聊
 
 ### 2022/4/18
 
