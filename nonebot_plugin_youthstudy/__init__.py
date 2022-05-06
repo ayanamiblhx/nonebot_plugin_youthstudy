@@ -12,8 +12,8 @@ from datetime import datetime
 from .get_src import get_pic
 from nonebot import require
 
+
 scheduler = require('nonebot_plugin_apscheduler').scheduler
-# 获取超管id
 super_id = nonebot.get_driver().config.superusers
 
 
@@ -37,7 +37,8 @@ async def remind():
                     {
                         "type": "text",
                         "data": {
-                            "text": '本周的青年大学习开始喽！\n' + title + '\n开始时间：' + starttime + '\n答案见图二、完成截图见图三\nPs:如果学校会查后台记录，\n请前往相应平台观看1分钟，\n确保在后台留下观看记录！！！ '
+                            "text": '本周的青年大学习开始喽！\n' + title + '\n开始时间：' + starttime + '\n答案见图二、完成截图见图三\nPs' + \
+                                    ':如果学校会查后台记录，\n请前往相应平台观看1分钟，\n确保在后台留下观看记录！！！\n你也可以点击链接进行截图以获取带手机状态栏的完成截图\nhttps://qndxx.scubot.live/\n如果QQ不能直接打开请复制到微信打开！ '
                         }
                     },
                     {
@@ -71,8 +72,7 @@ async def remind():
                     time.sleep(1)
                     # 给群发送通知
                 for qq_group in qq_group_list:
-                    await nonebot.get_bot().send_group_msg(group_id=qq_group,
-                                                           message="[CQ:at,qq={}]{}".format("all", message))
+                    await nonebot.get_bot().send_group_msg(group_id=qq_group, message=message)
                     time.sleep(1)
                 break
             if num >= 200:
@@ -95,8 +95,7 @@ async def remind():
                     time.sleep(1)
                     # 给群发送通知
                 for qq_group in qq_group_list:
-                    await nonebot.get_bot().send_group_msg(group_id=qq_group,
-                                                           message="[CQ:at,qq={}]{}".format("all", message1))
+                    await nonebot.get_bot().send_group_msg(group_id=qq_group, message=message1)
                     time.sleep(1)
 
                 break
@@ -337,10 +336,11 @@ async def complete_Scr(bot: Bot, event: Event, state: T_State):
     try:
         content = await get_pic()
         scr = content[3]
+        c = "你也可以点击链接进行截图以获取带手机状态栏的完成截图\nhttps://qndxx.scubot.live/\n如果QQ不能直接打开请复制到微信打开！"
         if scr is None:
             await nonebot.get_bot().send(message="本周暂未更新青年大学习", at_sender=True, event=event)
         else:
-            await nonebot.get_bot().send(message=MessageSegment.image(scr), at_sender=True, event=event)
+            await nonebot.get_bot().send(message=MessageSegment.image(scr)+MessageSegment.text(c), at_sender=True, event=event)
     except Exception as e:
         await nonebot.get_bot().send(message=f"出错了，错误信息：{e}", at_sender=True, event=event)
         logger.error(f"{datetime.now()}: 错误信息：{e}")
@@ -429,8 +429,7 @@ async def add_friend(event: FriendRequestEvent):
         with open(pathlib.Path(__file__).with_name('set.json'), 'w', encoding='utf-8') as f1:
             json.dump(obj, f1, indent=4)
         for su_qq in super_id:
-            await nonebot.get_bot().send_msg(user_id=int(su_qq),
-                                             message=f'QQ：{add_qq}请求添加机器人为好友!\n请求添加时间：{realtime}\n验证信息为：{comment}')
+            await nonebot.get_bot().send_msg(user_id=int(su_qq),message=f'QQ：{add_qq}请求添加机器人为好友!\n请求添加时间：{realtime}\n验证信息为：{comment}')
     except Exception as e:
         for su_qq in super_id:
             await nonebot.get_bot().send_msg(user_id=int(su_qq), message=f'机器人出错了\n错误信息：{e}')
