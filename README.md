@@ -10,15 +10,6 @@
 </div>
 
 
-# 由于代码还没合并入主线，请用以下安装方式
-
-- 用`git clone`指令克隆本仓库获取到`nonebot_plugin_youthstudy`文件夹
-- 前往`https://wwt.lanzoub.com/iRDA504dture`下载文件
-- 将`nonebot_plugin_youthstudy`文件夹放到机器人`plugins`目录下
-- 文件放好后请直接跳到机器人配置，配置机器人，无需在bot.py中导入插件。
-
-
-
 ## 安装及更新
 
 - 使用`nb plugin install nonebot_plugin_youthstudy`或者`pip install nonebot_plugin_youthstudy`来进行安装
