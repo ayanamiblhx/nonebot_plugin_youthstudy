@@ -1,7 +1,0 @@
-dist/
-nonebot_plugin_youthstudy.egg-info/
-.gitignore
-nonebot_plugin_youthstudy/.idea/
-build/
-__pycache__/
-.idea/
