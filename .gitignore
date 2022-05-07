@@ -4,3 +4,4 @@ nonebot_plugin_youthstudy.egg-info/
 nonebot_plugin_youthstudy/.idea/
 build/
 __pycache__/
+.idea/
