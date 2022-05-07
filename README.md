@@ -1,7 +1,7 @@
 <div align="center">
     <img src="https://s4.ax1x.com/2022/03/05/bw2k9A.png" alt="bw2k9A.png" border="0"/>
     <h1>nonebot_plugin_youthstudy</h1>
-    <b>基于nonebot2的青年大学习插件，用于获取最新一期青年大学习答案</b>
+    <b>✨基于nonebot2的青年大学习插件，用于获取最新一期青年大学习答案✨</b>
     <br/>
     <a href="https://github.com/ayanamiblhx/nonebot_plugin_youthstudy/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/ayanamiblhx/nonebot_plugin_youthstudy?style=flat-square"></a>
     <a href="https://github.com/ayanamiblhx/nonebot_plugin_youthstudy/network"><img alt="GitHub forks" src="https://img.shields.io/github/forks/ayanamiblhx/nonebot_plugin_youthstudy?style=flat-square"></a>
@@ -25,42 +25,6 @@
 
 **注**：如果你使用`nb`安装插件，则不需要设置此项
 
-### 机器人配置
-
-- 自动检查更新功能需要定时任务插件支持，请安装定时任务插件
-
-  使用`nb plugin install nonebot_plugin_apscheduler`或者`pip install nonebot_plugin_apscheduler`来进行安装
-
-- 在nonebot的.env配置文件中输入以下配置内容
-
-  ```py
-  APSCHEDULER_AUTOSTART=true
-  APSCHEDULER_CONFIG={"apscheduler.timezone": "Asia/Shanghai"}
-  SUPERUSERS=["1111"]#设置超管账号
-  ```
-  
-- 在bot.py文件中添加以下内容
-
-  ```py
-  nonebot.init(apscheduler_autostart=True)
-  nonebot.init(apscheduler_config={
-      "apscheduler.timezone": "Asia/Shanghai"
-  })
-  ```
-
-- 请确保已安装以下Python第三方库
-
-  ```py
-  beautifulsoup4~=4.11.1
-  httpx~=0.20.0
-  Pillow~=9.1.0
-  pydantic~=1.9.0
-  requests~=2.27.1
-  ```
-
-  
-
-  
 
 ### 正式使用
 
@@ -68,15 +32,17 @@
 
 - 对机器人发送口令：“大学习截图”或者“完成截图”即可获取最新一期的青年大学习完成截图
 
-- 更多功能请对机器人发送指令：“帮助”、“功能”、“菜单”和“help"获取
+- 更多功能请对机器人发送指令：`大学习帮助`获取
 
-- 插件会在每周一10：00开始，每3分钟检查是否更新
+- 插件会在每周一10：00开始，每3分钟检查是否有新的青年大学习答案
 
 ### TODO
 
 - [ ] 优化机器人
 
 ## 更新日志
+### 2022/5/7
+- 代码重构
 
 ### 2022/4/24
 

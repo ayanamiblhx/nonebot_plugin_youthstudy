@@ -1,44 +1,48 @@
-import json
-import time
+import asyncio
+import re
+from datetime import datetime
+
 import nonebot
-import pathlib
-from nonebot.permission import SUPERUSER
-from nonebot.plugin import on_command, on_request
-from nonebot.typing import T_State
+from nonebot import require
 from nonebot.adapters.onebot.v11 import Bot, MessageSegment, Event, FriendRequestEvent
 from nonebot.log import logger
-from .getdata import get_answer
-from datetime import datetime
-from .get_src import get_pic
-from nonebot import require
+from nonebot.plugin import on_regex, on_request
 
+from .dao import UserDao, GroupDao
+from .file_tool import FileTool
+from .get_src import get_pic
+from .getdata import get_answer
+from .utils import YouthStudyEnum
 
 scheduler = require('nonebot_plugin_apscheduler').scheduler
-super_id = nonebot.get_driver().config.superusers
+FileTool()
 
 
-# 每周一10:00开始检测是否更新，每3分检测一次，觉得检测间隔太久，请手动修改time.sleep()，获取到答案后终止检测。
-@scheduler.scheduled_job('cron', day_of_week='0', hour=10, minute=0, id='a')
-async def remind():
+@scheduler.scheduled_job('cron', day_of_week='0', hour=10, minute=0, id='push_job')
+async def _():
     try:
-        num = 0
-        for i in range(960):
+        print("task start")
+        iterations = 0
+        while True:
             img = await get_answer()
             if img is None or img == '未找到答案':
-                time.sleep(180)
-                num += 1
+                await asyncio.sleep(YouthStudyEnum.SLEEP_TIME)
+                iterations += 1
             else:
                 content = await get_pic()
-                title = content[0]
-                starttime = content[1]
-                cover = content[2]
-                end_url = content[3]
+                title = content['title']
+                start_time = content['start_time']
+                cover = content['cover']
+                end = content['end']
                 message = [
                     {
                         "type": "text",
                         "data": {
-                            "text": '本周的青年大学习开始喽！\n' + title + '\n开始时间：' + starttime + '\n答案见图二、完成截图见图三\nPs' + \
-                                    ':如果学校会查后台记录，\n请前往相应平台观看1分钟，\n确保在后台留下观看记录！！！\n你也可以点击链接进行截图以获取带手机状态栏的完成截图\nhttps://qndxx.scubot.live/\n如果QQ不能直接打开请复制到微信打开！ '
+                            "text": '本周的青年大学习开始喽！\n' +
+                                    title + '\n开始时间：' + start_time +
+                                    '\n答案见图二、完成截图见图三\nPs:如果学校会查后台记录，\n'
+                                    '请前往相应平台观看1分钟，\n确保在后台留下观看记录！！！\n' +
+                                    '你也可以把链接复制到微信进行截图以获取带手机状态栏的完成截图\nhttps://qndxx.scubot.live/\n'
                         }
                     },
                     {
@@ -53,30 +57,17 @@ async def remind():
                             "file": img
                         }
                     },
-
                     {
                         "type": "image",
                         "data": {
-                            "file": end_url
+                            "file": end
                         }
                     }
                 ]
-                # 读取需要推送的群和好友
-                with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-                    obj = json.load(f)
-                qq_friend_list = obj['qq_friend_list']
-                qq_group_list = obj['qq_group_list']
-                # 给配置的列表里的qq好友发通知
-                for qq in qq_friend_list:
-                    await nonebot.get_bot().send_private_msg(user_id=qq, message=message)
-                    time.sleep(1)
-                    # 给群发送通知
-                for qq_group in qq_group_list:
-                    await nonebot.get_bot().send_group_msg(group_id=qq_group, message=message)
-                    time.sleep(1)
+                await study_send_msg(message=message)
                 break
-            if num >= 200:
-                message1 = [
+            if iterations >= YouthStudyEnum.MAX_ITERATIONS:
+                message_notfound = [
                     {
                         "type": "text",
                         "data": {
@@ -84,352 +75,219 @@ async def remind():
                         }
                     }
                 ]
-                # 读取需要推送的群和好友
-                with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-                    obj = json.load(f)
-                qq_friend_list = obj['qq_friend_list']
-                qq_group_list = obj['qq_group_list']
-                # 给配置的列表里的qq好友发通知
-                for qq in qq_friend_list:
-                    await nonebot.get_bot().send_private_msg(user_id=qq, message=message1)
-                    time.sleep(1)
-                    # 给群发送通知
-                for qq_group in qq_group_list:
-                    await nonebot.get_bot().send_group_msg(group_id=qq_group, message=message1)
-                    time.sleep(1)
-
+                await study_send_msg(message=message_notfound)
                 break
     except Exception as e:
-        for qq in super_id:
-            await nonebot.get_bot().send_msg(user_id=int(qq), message=f'机器人出错了\n错误信息：{e}')
+        logger.error(e)
+        await study_send_msg(f"自动获取答案出错，错误信息{e}")
 
 
-# 以下指令为机器人主人指令
-# 机器人主人使用，用于关闭所有大学习自动更新推送
-close_time_task = on_command('全局关闭大学习推送', aliases={'全局关闭推送'}, permission=SUPERUSER)
+async def study_send_msg(message):
+    for user in UserDao().get_push_user():
+        await nonebot.get_bot().send_private_msg(user_id=user, message=message)
+        await asyncio.sleep(1)
+    for group in GroupDao().get_push_group():
+        await nonebot.get_bot().send_group_msg(group_id=group,
+                                               message=message)
+        await asyncio.sleep(1)
 
 
-@close_time_task.handle()
-async def close_time_task(state: T_State, event: Event):
-    try:
-        scheduler.pause_job(job_id='a')
-        await nonebot.get_bot().send(message="已全局关闭青年大学习自动检查更新推送。", at_sender=True, event=event)
-    except Exception as e:
-        await nonebot.get_bot().send(message=f'出错了!\n错误日志:{e}', at_sender=True, event=event)
+youth_study = on_regex('^青年大学习$|^大学习$')
 
 
-# 机器人主人使用，用于开启所有大学习自动更新推送
-recover_time_task = on_command('全局开启大学习推送', aliases={'全局开启推送'}, permission=SUPERUSER)
-
-
-@recover_time_task.handle()
-async def recover_time_task(state: T_State, event: Event):
-    try:
-        scheduler.resume_job(job_id='a')
-        await nonebot.get_bot().send(message='已全局开启青年大学习自动检查更新推送。', at_sender=True, event=event)
-    except Exception as e:
-        await nonebot.get_bot().send(message=f'出错了!\n错误日志:{e}', at_sender=True, event=event)
-
-
-# 机器人主人使用，用于添加推送好友
-add_friend_list = on_command('添加推送好友', permission=SUPERUSER)
-
-
-@add_friend_list.handle()
-async def add_friend_list(event: Event):
-    try:
-        # 读取需要推送的好友
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq_friend_list = obj['qq_friend_list']
-        user_id = int(str(event.get_user_id()))
-        add_qq = int(str(event.get_message()).split('#')[-1])
-        if add_qq not in qq_friend_list:
-            await nonebot.get_bot().send(user_id=user_id, message=f'已将好友：{add_qq}加入推送列表', event=event)
-            qq_friend_list.append(add_qq)
-            obj['qq_friend_list'] = qq_friend_list
-            with open(pathlib.Path(__file__).with_name('set.json'), 'w', encoding='utf-8') as f1:
-                json.dump(obj, f1, indent=4)
-        else:
-            await nonebot.get_bot().send(user_id=user_id, message=f'加入失败！\n好友：{add_qq}已经在推送列表中了', event=event)
-    except Exception as e:
-        await nonebot.get_bot().send(message=f'出错了!\n错误日志:{e}', at_sender=True, event=event)
-
-
-# 机器人主人使用，用于删除推送好友
-del_friend_list = on_command('删除推送好友', permission=SUPERUSER)
-
-
-@del_friend_list.handle()
-async def del_friend_list(event: Event):
-    try:
-        # 读取需要推送的好友
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq_friend_list = obj['qq_friend_list']
-        user_id = int(str(event.get_user_id()))
-        del_qq = int(str(event.get_message()).split('#')[-1])
-        if del_qq not in qq_friend_list:
-            await nonebot.get_bot().send(user_id=user_id, message=f'删除失败!\n好友：{del_qq}不在好友推送列表', event=event)
-        else:
-            qq_friend_list.remove(del_qq)
-            obj['qq_friend_list'] = qq_friend_list
-            with open(pathlib.Path(__file__).with_name('set.json'), 'w', encoding='utf-8') as f1:
-                json.dump(obj, f1, indent=4)
-            await nonebot.get_bot().send(user_id=user_id, message=f'已将好友：{del_qq}移出推送列表！', event=event)
-    except Exception as e:
-        await nonebot.get_bot().send(message=f'出错了!\n错误日志:{e}', at_sender=True, event=event)
-
-
-# 机器人主人使用，用于添加推送群聊
-add_group_list = on_command('添加推送群聊', permission=SUPERUSER)
-
-
-@add_group_list.handle()
-async def add_group_list(event: Event):
-    try:
-        # 读取需要推送的群
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq_group_list = obj['qq_group_list']
-        user_id = int(str(event.get_user_id()))
-        add_group = int(str(event.get_message()).split('#')[-1])
-        if add_group not in qq_group_list:
-            await nonebot.get_bot().send(user_id=user_id, message=f'已将群：{add_group}加入推送列表', event=event)
-            qq_group_list.append(add_group)
-            obj['qq_group_list'] = qq_group_list
-            with open(pathlib.Path(__file__).with_name('set.json'), 'w', encoding='utf-8') as f1:
-                json.dump(obj, f1, indent=4)
-        else:
-            await nonebot.get_bot().send(user_id=user_id, message=f'加入失败！\n群：{add_group}已经在推送列表中了', event=event)
-    except Exception as e:
-        await nonebot.get_bot().send(message=f'出错了!\n错误日志:{e}', at_sender=True, event=event)
-
-
-# 机器人主人使用，用于删除推送群聊
-del_group_list = on_command('删除推送群聊', permission=SUPERUSER)
-
-
-@del_group_list.handle()
-async def del_group_list(event: Event):
-    try:
-        # 读取需要推送的群
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq_group_list = obj['qq_group_list']
-        user_id = int(str(event.get_user_id()))
-        del_group = int(str(event.get_message()).split('#')[-1])
-        if del_group not in qq_group_list:
-            await nonebot.get_bot().send(user_id=user_id, message=f'删除失败！\n群：{del_group}不在推送列表', event=event)
-        else:
-            qq_group_list.remove(del_group)
-            obj['qq_group_list'] = qq_group_list
-            with open(pathlib.Path(__file__).with_name('set.json'), 'w', encoding='utf-8') as f1:
-                json.dump(obj, f1, indent=4)
-            await nonebot.get_bot().send(user_id=user_id, message=f'已将群：{del_group}移出推送列表！', event=event)
-    except Exception as e:
-        await nonebot.get_bot().send(message=f'出错了!\n错误日志:{e}', at_sender=True, event=event)
-
-
-# 机器人主人使用，用于查询推送群聊列表
-index_group_list = on_command('查询推送群聊列表', permission=SUPERUSER)
-
-
-@index_group_list.handle()
-async def index_group_list(event: Event):
-    try:
-        # 读取需要推送的群
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq_group_list = obj['qq_group_list']
-        user_id = int(str(event.get_user_id()))
-        if qq_group_list:
-            group = ''
-            for i in qq_group_list:
-                group = group + '群：' + str(i) + '\n' + ''
-            await nonebot.get_bot().send(user_id=user_id, message=group, at_sender=True, event=event)
-        else:
-            await nonebot.get_bot().send(user_id=user_id, message='暂无推送群聊！', event=event)
-    except Exception as e:
-        await nonebot.get_bot().send(message=f'查询失败！\n错误日志：{e}', event=event)
-
-
-# 机器人主人使用，用于查询推送好友列表
-index_qq_list = on_command('查询推送好友列表', permission=SUPERUSER)
-
-
-@index_qq_list.handle()
-async def index_qq_list(event: Event):
-    try:
-        # 读取需要推送的好友
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq_friend_list = obj['qq_friend_list']
-        user_id = int(str(event.get_user_id()))
-        if qq_friend_list:
-            group = ''
-            for i in qq_friend_list:
-                group = group + '好友：' + str(i) + '\n' + ''
-            await nonebot.get_bot().send(user_id=user_id, message=group, at_sender=True, event=event)
-        else:
-            await nonebot.get_bot().send(user_id=user_id, message='暂无推送好友！', event=event)
-    except Exception as e:
-        await nonebot.get_bot().send(message=f'查询失败！\n错误日志：{e}', event=event)
-
-
-# 机器人主人使用，同意好友添加机器人请求
-agree_qq_add = on_command('同意添加好友', permission=SUPERUSER)
-
-
-@agree_qq_add.handle()
-async def agree_qq_add(event: Event):
-    try:
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq = obj['add_qq_req_list']['qq']
-        flag = obj['add_qq_req_list']['flag']
-        user_id = int(event.get_user_id())
-        agree_id = int(str(event.get_message()).split('#')[-1])
-        if agree_id in qq:
-            await nonebot.get_bot().send(user_id=user_id, message=f'机器人成功添加QQ:{agree_id}为好友！', event=event)
-            await nonebot.get_bot().set_friend_add_request(flag=flag, approve=True, remark='')
-            qq.remove(agree_id)
-            flag = ''
-            obj['add_qq_req_list']['qq'] = qq
-            obj['add_qq_req_list']['flag'] = flag
-            with open(pathlib.Path(__file__).with_name('set.json'), 'w', encoding='utf-8') as f1:
-                json.dump(obj, f1, indent=4)
-
-        else:
-            await nonebot.get_bot().send(user_id=user_id, message=f'QQ:{agree_id}不在好友申请列表！', event=event)
-    except Exception as e:
-        for su_qq in super_id:
-            await nonebot.get_bot().send_msg(user_id=int(su_qq), message=f'机器人出错了\n错误信息：{e}')
-
-
-# 以下为基础指令，所有好友皆可用
-# 获取大学习答案
-college_study = on_command('青年大学习', aliases={'大学习'}, priority=5)
-
-
-@college_study.handle()
-async def _(bot: Bot, event: Event, state: T_State):
+@youth_study.handle()
+async def _():
     try:
         img = await get_answer()
         if img is None:
-            await college_study.send("本周暂未更新青年大学习", at_sender=True)
+            await youth_study.send("本周暂未更新青年大学习", at_sender=True)
         elif img == "未找到答案":
-            await college_study.send("未找到答案", at_sender=True)
+            await youth_study.send("未找到答案", at_sender=True)
         else:
-            await college_study.send(MessageSegment.image(img), at_sender=True)
+            await youth_study.send(MessageSegment.image(img), at_sender=True)
     except Exception as e:
-        await college_study.send(f"出错了，错误信息：{e}", at_sender=True)
+        await youth_study.send(f"出错了，错误信息：{e}", at_sender=True)
         logger.error(f"{datetime.now()}: 错误信息：{e}")
 
 
-# 获取大学习完成截图
-complete_Scr = on_command('大学习截图', aliases={'完成截图'}, priority=5)
+complete_scr = on_regex('^大学习截图$|^完成截图$')
 
 
-@complete_Scr.handle()
-async def complete_Scr(bot: Bot, event: Event, state: T_State):
+@complete_scr.handle()
+async def _(event: Event):
     try:
+        msg = event.get_plaintext()
         content = await get_pic()
-        scr = content[3]
-        c = "你也可以点击链接进行截图以获取带手机状态栏的完成截图\nhttps://qndxx.scubot.live/\n如果QQ不能直接打开请复制到微信打开！"
+        scr = content['cover']
+        end = content['end']
         if scr is None:
-            await nonebot.get_bot().send(message="本周暂未更新青年大学习", at_sender=True, event=event)
+            await complete_scr.send("本周暂未更新青年大学习", at_sender=True)
         else:
-            await nonebot.get_bot().send(message=MessageSegment.image(scr)+MessageSegment.text(c), at_sender=True, event=event)
+            if msg == "大学习截图":
+                await complete_scr.send(MessageSegment.image(scr), at_sender=True)
+            elif msg == "完成截图":
+                text = '你也可以把链接复制到微信进行截图以获取带手机状态栏的完成截图\nhttps://qndxx.scubot.live/\n'
+                await complete_scr.send(MessageSegment.image(end) + MessageSegment.text(text), at_sender=True)
     except Exception as e:
-        await nonebot.get_bot().send(message=f"出错了，错误信息：{e}", at_sender=True, event=event)
+        await complete_scr.send(f"出错了，错误信息：{e}", at_sender=True)
         logger.error(f"{datetime.now()}: 错误信息：{e}")
 
 
-# 开启大学习定时更新推送
-recover_task = on_command('开启大学习推送', priority=5)
+study_push = on_regex(r"^开启大学习推送$|^关闭大学习推送$")
 
 
-@recover_task.handle()
-async def recover_task(event: Event):
-    try:
-        # 读取需要推送的好友
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq_friend_list = obj['qq_friend_list']
-        user_id = int(str(event.get_user_id()))
-        if user_id not in qq_friend_list:
-            await nonebot.get_bot().send(user_id=user_id, message='青年大学习定时更新推送开启成功!', event=event)
-            qq_friend_list.append(user_id)
-            obj['qq_friend_list'] = qq_friend_list
-            with open(pathlib.Path(__file__).with_name('set.json'), 'w', encoding='utf-8') as f1:
-                json.dump(obj, f1, indent=4)
+@study_push.handle()
+async def _(event: Event):
+    msg_text = event.get_plaintext()
+    user_id = event.get_user_id()
+    group_id = 0 if not hasattr(event, 'group_id') else event.group_id
+    if msg_text == "开启大学习推送":
+        if group_id != 0:
+            if user_id in FileTool().super_users:
+                GroupDao().set_or_update_push(group_id, 1)
+                await study_push.send(f"群{group_id}开启大学习推送成功", at_sender=True)
+            else:
+                await study_push.send("您没有权限使用此功能", at_sender=True)
         else:
-            await nonebot.get_bot().send(user_id=user_id, message='你已经开启了青年大学习定时更新推送了！', event=event)
-    except:
-        await nonebot.get_bot().send(message='出错了!请询问机器人主人以解决问题！', event=event)
-
-
-# 关闭大学习定时更新推送
-close_task = on_command('关闭大学习推送', priority=5)
-
-
-@close_task.handle()
-async def close_task(event: Event):
-    try:
-        # 读取需要推送的好友
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq_friend_list = obj['qq_friend_list']
-        user_id = int(str(event.get_user_id()))
-        if user_id not in qq_friend_list:
-            await nonebot.get_bot().send(user_id=user_id, message='你已经关闭青年大学习定时更新推送了！!', event=event)
+            UserDao().set_or_update_push(user_id, 1)
+            await study_push.send(f"用户{user_id}开启大学习推送成功", at_sender=True)
+    elif msg_text == "关闭大学习推送":
+        if group_id != 0:
+            if user_id in FileTool().super_users:
+                GroupDao().set_or_update_push(group_id, 0)
+                await study_push.send(f"群{group_id}关闭大学习推送成功", at_sender=True)
+            else:
+                await study_push.send("您没有权限使用此功能", at_sender=True)
         else:
-            qq_friend_list.remove(user_id)
-            obj['qq_friend_list'] = qq_friend_list
-            with open(pathlib.Path(__file__).with_name('set.json'), 'w', encoding='utf-8') as f1:
-                json.dump(obj, f1, indent=4)
-            await nonebot.get_bot().send(user_id=user_id, message='青年大学习定时更新推送关闭成功!', event=event)
-    except:
-        await nonebot.get_bot().send(message='出错了!请询问机器人主人以解决问题！', event=event)
+            UserDao().set_or_update_push(user_id, 0)
+            await study_push.send(f"用户{user_id}关闭大学习推送成功", at_sender=True)
 
 
-# 大学习帮助功能
-help_list = on_command('功能', aliases={'菜单', '帮助', 'help'}, priority=5)
+global_push = on_regex(r"^开启大学习全局推送$|^关闭大学习全局推送$")
+
+
+@global_push.handle()
+async def _(event: Event):
+    msg = event.get_plaintext()
+    if event.get_user_id() in FileTool().super_users:
+        if msg == "开启大学习全局推送":
+            scheduler.resume_job('push_job')
+            await global_push.send(f"开启大学习全局推送成功", at_sender=True)
+        elif msg == "关闭大学习全局推送":
+            scheduler.pause_job('push_job')
+            await global_push.send(f"关闭大学习全局推送成功", at_sender=True)
+    else:
+        await global_push.send("您没有权限使用此功能", at_sender=True)
+
+
+push_list = on_regex(r"^查询大学习推送群列表$|^查询大学习推送用户列表$")
+
+
+@push_list.handle()
+async def _(event: Event):
+    msg = event.get_plaintext()
+    if event.get_user_id() in FileTool().super_users:
+        groups = GroupDao().get_push_group()
+        users = UserDao().get_push_user()
+        if msg == "查询大学习推送群列表":
+            if groups.__len__() == 0:
+                await push_list.send("暂无群推送列表", at_sender=True)
+            else:
+                msg = "推送群列表："
+                for group in groups:
+                    msg += f"\n群号: {group}"
+                await push_list.send(msg, at_sender=True)
+        elif msg == "查询大学习推送用户列表":
+            if users.__len__() == 0:
+                await push_list.send("暂无用户推送列表", at_sender=True)
+            else:
+                msg = "推送用户列表："
+                for user in users:
+                    msg += f"\nqq: {user}"
+                await push_list.send(msg, at_sender=True)
+    else:
+        await push_list.send("您没有权限使用此功能", at_sender=True)
+
+
+async def friend_request(event: Event):
+    return event.__class__.__name__ == "FriendRequestEvent"
+
+
+friend_req = on_request(rule=friend_request)
+
+
+@friend_req.handle()
+async def friend_req(event: FriendRequestEvent, bot: Bot):
+    try:
+        comment = event.comment
+        flag = event.flag
+        user_id = event.user_id
+        if UserDao().get_friend_req(user_id).__len__() > 0 \
+                and flag == UserDao().get_friend_req(user_id)[0]["flag"]:
+            return
+        time = datetime.fromtimestamp(event.time).strftime('%Y年%m月%d日 %H时%M分%S秒')
+        UserDao().set_or_update_friend_req(user_id, flag)
+        for superuser in FileTool().super_users:
+            await bot.send_msg(user_id=superuser,
+                               message=f"QQ：{user_id}请求添加机器人为好友!\n请求添加时间：{time}\n验证信息为：{comment}")
+    except Exception as e:
+        logger.error(e)
+        for superuser in FileTool().super_users:
+            await bot.send_msg(user_id=superuser, message=f"添加好友请求失败,错误信息{e}")
+
+
+friend_req_handle = on_regex(r"^同意所有好友请求$|^拒绝所有好友请求$|^同意[1-9][0-9]{4,10}$|^拒绝[1-9][0-9]{4,10}$")
+
+
+@friend_req_handle.handle()
+async def _(event: Event, bot: Bot):
+    msg = event.get_plaintext()
+    if event.get_user_id() in FileTool().super_users:
+        if msg == "同意所有好友请求":
+            for req in UserDao().get_friend_req():
+                await bot.set_friend_add_request(flag=req["flag"], approve=True)
+            await friend_req_handle.send("同意所有好友请求成功", at_sender=True)
+        elif msg == "拒绝所有好友请求":
+            for req in UserDao().get_friend_req():
+                await bot.set_friend_add_request(flag=req["flag"], approve=False)
+            await friend_req_handle.send("拒绝所有好友请求成功", at_sender=True)
+        elif bool(re.match(r"^同意[1-9]\d{4,10}$", msg)):
+            user_id = re.sub(r'\D+', '', msg)
+            req = UserDao().get_friend_req(user_id)
+            if req.__len__() == 1:
+                await bot.set_friend_add_request(flag=req[0]["flag"], approve=True)
+                await friend_req_handle.send(f"同意{user_id}好友请求成功", at_sender=True)
+            else:
+                await friend_req_handle.send(f"没有来自{user_id}的好友请求", at_sender=True)
+        elif bool(re.match(r"^拒绝[1-9]\d{4,10}$", msg)):
+            user_id = re.sub(r'\D+', '', msg)
+            req = UserDao().get_friend_req(user_id)
+            if req.__len__() == 1:
+                await bot.set_friend_add_request(flag=req[0]["flag"], approve=False)
+                await friend_req_handle.send(f"拒绝{user_id}好友请求成功", at_sender=True)
+            else:
+                await friend_req_handle.send(f"没有来自{user_id}的好友请求", at_sender=True)
+    else:
+        await friend_req_handle.send("您没有权限使用此功能", at_sender=True)
+
+
+help_list = on_regex('^大学习帮助$')
 
 
 @help_list.handle()
-async def help_list(event: Event):
+async def _():
+    import pkg_resources
     try:
-        _help = '大学习功能指令\n主人专用:\n1、添加(删除)推送群聊#群号\n2、添加(删除)推送好友#QQ号\n3、查询推送好友(群聊)列表\n4、全局开启(关闭)大学习推送或全局开启(关闭)推送\n5、同意添加好友#QQ号\n' + \
-                '全员可用功能:\n1、开启(关闭)大学习推送\n2、青年大学习或大学习\n3、大学习截图或完成截图\n4、帮助、菜单、功能和help '
-        await nonebot.get_bot().send(message=_help, at_sender=True, event=event)
-    except:
-        await nonebot.get_bot().send(message='出错了!请询问机器人主人以解决问题！', event=event)
+        _dist: pkg_resources.Distribution = pkg_resources.get_distribution("nonebot_plugin_youthstudy")
+        _help = f'大学习版本：{_dist.version}\n' \
+                '大学习功能指令\n' \
+                '主人专用:\n' \
+                '1、开启(关闭)大学习推送(群聊使用)\n2、查询大学习推送用户(群)列表\n' \
+                '4、开启(关闭)大学习全局推送\n5、处理好友请求：同意(拒绝)QQ号或同意(拒绝)所有好友请求\n' + \
+                '全员可用功能:\n' \
+                '1、开启(关闭)大学习推送(私聊使用)\n2、青年大学习或大学习\n3、大学习截图或完成截图\n4、大学习帮助 '
 
-
-# 机器人推送添加机器人好友请求事件
-add_friend = on_request(priority=1, block=True)
-
-
-@add_friend.handle()
-async def add_friend(event: FriendRequestEvent):
-    try:
-        with open(pathlib.Path(__file__).with_name('set.json'), 'r', encoding='utf-8') as f:
-            obj = json.load(f)
-        qq = obj['add_qq_req_list']['qq']
-        add_req = json.loads(event.json())
-        add_qq = add_req['user_id']
-        qq.append(add_qq)
-        comment = add_req['comment']
-        flag = add_req['flag']
-        realtime = time.strftime('%Y年%m月%d日 %H:%M:%S', time.localtime(add_req['time']))
-        obj['add_qq_req_list']['qq'] = qq
-        obj['add_qq_req_list']['flag'] = flag
-        with open(pathlib.Path(__file__).with_name('set.json'), 'w', encoding='utf-8') as f1:
-            json.dump(obj, f1, indent=4)
-        for su_qq in super_id:
-            await nonebot.get_bot().send_msg(user_id=int(su_qq),message=f'QQ：{add_qq}请求添加机器人为好友!\n请求添加时间：{realtime}\n验证信息为：{comment}')
+        await help_list.send(_help, at_sender=True)
     except Exception as e:
-        for su_qq in super_id:
-            await nonebot.get_bot().send_msg(user_id=int(su_qq), message=f'机器人出错了\n错误信息：{e}')
+        logger.error(e)
+        await help_list.send(f'出错了，错误信息{e}', at_sender=True)

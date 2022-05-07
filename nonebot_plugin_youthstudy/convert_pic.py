@@ -7,8 +7,8 @@ font_path = dirname(__file__) + '/resource/font/font.otf'
 icon_path = dirname(__file__) + '/resource/bac/bac.png'
 
 
-def size(size: int) -> ImageFont:
-    return ImageFont.truetype(font_path, size)
+def size(fontsize: int) -> ImageFont:
+    return ImageFont.truetype(font_path, fontsize)
 
 
 async def convert_pic(text):

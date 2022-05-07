@@ -1,5 +1,4 @@
-beautifulsoup4~=4.11.1
-httpx~=0.20.0
-Pillow~=9.1.0
-pydantic~=1.9.0
-requests~=2.27.1
+beautifulsoup4==4.11.1
+httpx==0.21.3
+nonebot==1.8.2
+Pillow==9.1.0
