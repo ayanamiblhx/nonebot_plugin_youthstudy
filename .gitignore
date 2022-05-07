@@ -1,0 +1,7 @@
+.gitignore
+.idea
+nonebot_plugin_youthstudy/.idea
+nonebot_plugin_youthstudy.egg-info
+build
+dist
+__pycache__/
