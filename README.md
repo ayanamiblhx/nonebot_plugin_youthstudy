@@ -15,8 +15,6 @@
 - 使用`nb plugin install nonebot_plugin_youthstudy`或者`pip install nonebot_plugin_youthstudy`来进行安装
 - 使用`nb plugin update nonebot_plugin_youthstudy`或者`pip install nonebot_plugin_youthstudy -U`来进行更新
 
-
-
 ### 导入插件(两种方式二选一)
 
 - 在`bot.py`中添加`nonebot.load_plugin("nonebot_plugin_youthstudy")`
@@ -25,6 +23,13 @@
 
 **注**：如果你使用`nb`安装插件，则不需要设置此项
 
+### 添加配置
+
+- 运行一遍bot，然后关闭
+
+- 在bot目录的data目录下修改`study_config.json`文件，添加如下配置：
+
+    - `"SUPER_USERS": ["超级用户qq号"]`
 
 ### 正式使用
 
