@@ -10,7 +10,6 @@
 </div>
 
 
-
 ## 安装及更新
 
 - 使用`nb plugin install nonebot_plugin_youthstudy`或者`pip install nonebot_plugin_youthstudy`来进行安装
@@ -48,6 +47,18 @@
       "apscheduler.timezone": "Asia/Shanghai"
   })
   ```
+
+- 请确保已安装以下Python第三方库
+
+  ```py
+  beautifulsoup4~=4.11.1
+  httpx~=0.20.0
+  Pillow~=9.1.0
+  pydantic~=1.9.0
+  requests~=2.27.1
+  ```
+
+  
 
   
 
