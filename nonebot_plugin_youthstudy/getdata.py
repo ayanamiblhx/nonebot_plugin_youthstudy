@@ -1,10 +1,12 @@
-import time
-from httpx import AsyncClient
-from datetime import datetime
 import json
+import time
+from datetime import datetime
+
 from bs4 import BeautifulSoup
-from .convert_pic import convert_pic
+from httpx import AsyncClient
 from nonebot.log import logger
+
+from .convert_pic import convert_pic
 
 
 async def get_update():
@@ -36,6 +38,7 @@ async def parse_html(uri):
     template = "{num}. {check}"
     async with AsyncClient(proxies={"all://": None}) as client:
         try:
+            uri = uri if uri.endswith('m.html') else uri.replace('index.html', 'm.html')
             res = await client.get(uri, headers=head, timeout=10)
             if res.status_code == 200:
                 start = res.text.find(start_div)
@@ -99,7 +102,7 @@ async def parse_html(uri):
                     result = [output[0]]
                     for i, v in enumerate(output):
                         if i % 13 != 0 and i != 0:
-                            result[int(i/13)] += v
+                            result[int(i / 13)] += v
                         elif i % 13 == 0 and i != 0:
                             result.append(v)
                     return result
