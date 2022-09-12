@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class YouthStudyEnum(Enum):
+class YouthStudyEnum(IntEnum):
     """
     SLEEP_TIME: 睡眠时间\n
     ITERATIONS: 迭代次数\n
