@@ -21,8 +21,9 @@ async def get_update():
                 data = json.loads(res.text)
                 return data
             else:
-                raise f"请求失败{res.status_code}"
+                return None
         except Exception as e:
+            logger.error(e)
             raise e
 
 
@@ -113,20 +114,25 @@ async def parse_html(uri):
 
 
 async def get_answer():
-    update = await get_update()
-    if not update:
-        return "未找到答案"
-    now = datetime.now().date()
-    start_time = datetime.strptime(update["result"]["startTime"], "%Y-%m-%d %H:%M:%S").date()
-    days = (now - start_time).days
-    if days < 7:
-        end_time = time.strptime(update["result"]["endTime"], "%Y-%m-%d %H:%M:%S")
-        end_time = '结束日期: ' + time.strftime("%m{m}%d{d}%H{H}%M{M}", end_time).format(m='月', d='日', H='时', M='分')
-        title = "青年大学习" + update["result"]["type"]
-        period = update["result"]["title"]
-        answer = await parse_html(update["result"]["uri"])
-    else:
-        return None
-    text = {"title": title, "period": period, "answer": answer, "end_time": end_time}
-    img = await convert_pic(text)
-    return img
+    try:
+        update = await get_update()
+        if not update:
+            return "未找到答案"
+        now = datetime.now().date()
+        start_time = datetime.strptime(update["result"]["startTime"], "%Y-%m-%d %H:%M:%S").date()
+        days = (now - start_time).days
+        if days < 7:
+            end_time = time.strptime(update["result"]["endTime"], "%Y-%m-%d %H:%M:%S")
+            end_time = '结束日期: ' + time.strftime("%m{m}%d{d}%H{H}%M{M}", end_time).format(m='月', d='日', H='时',
+                                                                                             M='分')
+            title = "青年大学习" + update["result"]["type"]
+            period = update["result"]["title"]
+            answer = await parse_html(update["result"]["uri"])
+        else:
+            return None
+        text = {"title": title, "period": period, "answer": answer, "end_time": end_time}
+        img = await convert_pic(text)
+        return img
+    except Exception as e:
+        logger.error(e)
+        raise e
