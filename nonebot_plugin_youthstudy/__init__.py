@@ -20,7 +20,7 @@ FileTool()
 
 @scheduler.scheduled_job('cron', day_of_week='0', hour=10, minute=0, id='push_job')
 async def _():
-    logger.info("task started")
+    logger.info("开始获取大学习答案")
     iterations = 0
     while True:
         try:
