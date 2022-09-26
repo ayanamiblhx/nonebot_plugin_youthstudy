@@ -20,66 +20,68 @@ FileTool()
 
 @scheduler.scheduled_job('cron', day_of_week='0', hour=10, minute=0, id='push_job')
 async def _():
-    try:
-        logger.info("开始获取大学习答案")
-        iterations = 0
-        while True:
+    logger.info("task started")
+    iterations = 0
+    while True:
+        try:
             img = await get_answer()
-            if img is None or img == '未找到答案':
-                await asyncio.sleep(YouthStudyEnum.SLEEP_TIME)
-                iterations += 1
-            else:
-                content = await get_pic()
-                title = content['title']
-                start_time = content['start_time']
-                cover = content['cover']
-                end = content['end']
-                message = [
-                    {
-                        "type": "text",
-                        "data": {
-                            "text": '本周的青年大学习开始喽！\n' +
-                                    title + '\n开始时间：' + start_time +
-                                    '\n答案见图二、完成截图见图三\nPs:如果学校会查后台记录，\n'
-                                    '请前往相应平台观看1分钟，\n确保在后台留下观看记录！！！\n' +
-                                    '你也可以把链接复制到微信进行截图以获取带手机状态栏的完成截图\nhttps://qndxx.scubot.live/\n'
-                        }
-                    },
-                    {
-                        "type": "image",
-                        "data": {
-                            "file": cover
-                        }
-                    },
-                    {
-                        "type": "image",
-                        "data": {
-                            "file": img
-                        }
-                    },
-                    {
-                        "type": "image",
-                        "data": {
-                            "file": end
-                        }
+        except Exception as e:
+            logger.error(e)
+            await study_send_msg(f"自动获取答案出错，错误信息{e}")
+        if img is None or img == '未找到答案':
+            logger.info(f"{img}")
+            logger.info(f"第{iterations}次循环")
+            await asyncio.sleep(YouthStudyEnum.SLEEP_TIME)
+            iterations += 1
+        else:
+            content = await get_pic()
+            title = content['title']
+            start_time = content['start_time']
+            cover = content['cover']
+            end = content['end']
+            message = [
+                {
+                    "type": "text",
+                    "data": {
+                        "text": '本周的青年大学习开始喽！\n' +
+                                title + '\n开始时间：' + start_time +
+                                '\n答案见图二、完成截图见图三\nPs:如果学校会查后台记录，\n'
+                                '请前往相应平台观看1分钟，\n确保在后台留下观看记录！！！\n' +
+                                '你也可以把链接复制到微信进行截图以获取带手机状态栏的完成截图\nhttps://qndxx.scubot.live/\n'
                     }
-                ]
-                await study_send_msg(message=message)
-                break
-            if iterations >= YouthStudyEnum.MAX_ITERATIONS:
-                message_notfound = [
-                    {
-                        "type": "text",
-                        "data": {
-                            "text": '本周没有大学习哦！'
-                        }
+                },
+                {
+                    "type": "image",
+                    "data": {
+                        "file": cover
                     }
-                ]
-                await study_send_msg(message=message_notfound)
-                break
-    except Exception as e:
-        logger.error(e)
-        await study_send_msg(f"自动获取答案出错，错误信息{e}")
+                },
+                {
+                    "type": "image",
+                    "data": {
+                        "file": img
+                    }
+                },
+                {
+                    "type": "image",
+                    "data": {
+                        "file": end
+                    }
+                }
+            ]
+            await study_send_msg(message=message)
+            break
+        if iterations >= YouthStudyEnum.MAX_ITERATIONS:
+            message_notfound = [
+                {
+                    "type": "text",
+                    "data": {
+                        "text": '本周没有大学习哦！'
+                    }
+                }
+            ]
+            await study_send_msg(message=message_notfound)
+            break
 
 
 async def study_send_msg(message):
