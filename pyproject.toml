@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot_plugin_youthstudy"
-version = "1.1.6"
+version = "1.1.7"
 description = "基于nonebot2的青年大学习插件"
 authors = ["ayanamiblhx <1196818079@qq.com>"]
 license = "GNU General Public License v3.0"
@@ -14,7 +14,7 @@ httpx = "^0.23.0"
 nonebot2 = ">=2.0.0b2"
 nonebot-adapter-onebot = "^2.0.0b1"
 Pillow = "^9.0.1"
-nonebot-plugin-apscheduler = "^0.1.2"
+nonebot-plugin-apscheduler = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 
