@@ -7,6 +7,7 @@ from nonebot import require
 from nonebot.adapters.onebot.v11 import Bot, MessageSegment, Event, FriendRequestEvent
 from nonebot.log import logger
 from nonebot.plugin import on_regex, on_request
+from httpx import HTTPError
 
 from .dao import UserDao, GroupDao
 from .file_tool import FileTool
@@ -18,7 +19,7 @@ scheduler = require('nonebot_plugin_apscheduler').scheduler
 FileTool()
 
 
-@scheduler.scheduled_job('cron', day_of_week='0', hour=10, minute=0, id='push_job')
+@scheduler.scheduled_job('cron', day_of_week='1', hour=14, minute=45, id='push_job')
 async def _():
     logger.info("开始获取大学习答案")
     iterations = 0
@@ -28,7 +29,7 @@ async def _():
         except Exception as e:
             logger.error(e)
             await study_send_msg(f"自动获取答案出错，错误信息{e}")
-        if img is None or img == '未找到答案':
+        if img is None:
             logger.info(f"{img}")
             logger.info(f"第{iterations}次循环")
             await asyncio.sleep(YouthStudyEnum.SLEEP_TIME)
@@ -43,7 +44,7 @@ async def _():
                 {
                     "type": "text",
                     "data": {
-                        "text": '本周的青年大学习开始喽！\n' +
+                        "text": '本周的青年大学习已开始\n' +
                                 title + '\n开始时间：' + start_time +
                                 '\n答案见图二、完成截图见图三\nPs:如果学校会查后台记录，\n'
                                 '请前往相应平台观看1分钟，\n确保在后台留下观看记录！！！\n' +
@@ -89,8 +90,7 @@ async def study_send_msg(message):
         await nonebot.get_bot().send_private_msg(user_id=user, message=message)
         await asyncio.sleep(1)
     for group in GroupDao().get_push_group():
-        await nonebot.get_bot().send_group_msg(group_id=group,
-                                               message=message)
+        await nonebot.get_bot().send_group_msg(group_id=group, message=message)
         await asyncio.sleep(1)
 
 
@@ -103,13 +103,12 @@ async def _():
         img = await get_answer()
         if img is None:
             await youth_study.send("本周暂未更新青年大学习", at_sender=True)
-        elif img == "未找到答案":
-            await youth_study.send("未找到答案", at_sender=True)
         else:
             await youth_study.send(MessageSegment.image(img), at_sender=True)
+    except HTTPError as e:
+        await youth_study.finish(f"网络错误: {e}")
     except Exception as e:
-        await youth_study.send(f"出错了，错误信息：{e}", at_sender=True)
-        logger.error(f"{datetime.now()}: 错误信息：{e}")
+        await youth_study.finish(f"{e}", at_sender=True)
 
 
 complete_scr = on_regex('^大学习截图$|^完成截图$')
@@ -288,7 +287,6 @@ async def _():
                 '4、开启(关闭)大学习全局推送\n5、处理好友请求：同意(拒绝)QQ号或同意(拒绝)所有好友请求\n' + \
                 '全员可用功能:\n' \
                 '1、开启(关闭)大学习推送(私聊使用)\n2、青年大学习或大学习\n3、大学习截图或完成截图\n4、大学习帮助 '
-
         await help_list.send(_help, at_sender=True)
     except Exception as e:
         logger.error(e)
