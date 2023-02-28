@@ -10,15 +10,27 @@
 </div>
 
 
-## 安装及更新
+## 安装
 
-- 使用`nb plugin install nonebot_plugin_youthstudy`或者`pip install nonebot_plugin_youthstudy`来进行安装
-- 使用`nb plugin update nonebot_plugin_youthstudy`或者`pip install nonebot_plugin_youthstudy -U`来进行更新
+```bash
+nb plugin install nonebot_plugin_youthstudy
+```
+或者
+```bash
+pip install nonebot_plugin_youthstudy
+```
 
-### 导入插件(两种方式二选一)
+## 更新
 
-- 在`bot.py`中添加`nonebot.load_plugin("nonebot_plugin_youthstudy")`
+```bash
+nb plugin update nonebot_plugin_youthstudy
+```
+或者
+```bash
+pip install nonebot_plugin_youthstudy -U
+```
 
+### 导入插件
 - 在`pyproject.toml`里的`[tool.nonebot]`中添加`plugins = ["nonebot_plugin_youthstudy"]`
 
 **注**：如果你使用`nb`安装插件，则不需要设置此项
